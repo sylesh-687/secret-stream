@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: trust-layer
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      repoURL: https://github.com/sylesh-687/secret-stream.git
+      revision: HEAD
+      directories:
+      - path: trust-layer/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL:  https://github.com/sylesh-687/secret-stream.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'default'
+      ignoreDifferences:
+      - group: apiextensions.k8s.io
+        kind: CustomResourceDefinition
+        jsonPointers:
+        - /metadata/annotations
+        - /metadata/labels
+        - /status
+        - /spec/preserveUnknownFields
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
